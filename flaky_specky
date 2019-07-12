@@ -1,0 +1,63 @@
+#!/usr/bin/env ruby
+require "bundler/setup"
+require "hanami/cli"
+require "rainbow/refinement"
+using Rainbow
+
+module Flaky
+  module Specky
+    module Commands
+      extend Hanami::CLI::Registry
+
+      class Runner < Hanami::CLI::Command
+        argument :seed, required: true, desc: "Seed value"
+        argument :failing_spec, required: true, desc: "Failing spec name"
+        argument :params, type: :array, required: true, desc: "Extra params like `TEST_ENV_NUMBER=2` and/or the rspec file list"
+
+        def call(seed:, failing_spec:, params: [], **)
+          if seed.to_i == 0 || params.size == 0
+            puts "Incorrect parameters"
+            system('./flaky_specky run --help')
+            exit(1)
+          end
+
+          parse_params(params, failing_spec)
+
+          command = "#{@envs.join(" ")} rspec --seed #{seed}".strip
+
+          spec_file_list.each do |files|
+            files += [failing_spec]
+            result = "#{command} #{files.join(" ")}"
+            puts "Running command:\n#{result}".yellow
+            unless system(result)
+              puts "Smallest applicable combination is:\n#{result}".green
+              exit
+            end
+          end
+        end
+
+        private
+
+        def parse_params(params, failing_spec)
+          @files, @envs = params.partition {|item| item =~ /_spec.rb$/}
+          @files.reject! {|item| item =~ /#{failing_spec}/}
+        end
+
+        def spec_file_list
+          files_list = []
+          @files.count.times do |i|
+            @files.combination(i + 1).each do |files|
+              files_list << files
+            end
+          end
+
+          files_list
+        end
+      end
+
+      register "run", Runner
+    end
+  end
+end
+
+Hanami::CLI.new(Flaky::Specky::Commands).call
