@@ -28,7 +28,7 @@ module Flaky
           spec_files.count.times do |i|
             puts "Combining #{failing_spec} with #{i+1} other spec file".blue
             spec_files.combination(i + 1).each do |files|
-              files += [failing_spec]
+              files.push(failing_spec)
               result = "#{command} #{files.join(" ")}"
 
               puts "Running command:\n#{result}".yellow
