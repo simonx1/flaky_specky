@@ -26,7 +26,7 @@ module Flaky
           command = "#{envs.join(" ")} rspec --seed #{seed}".strip
 
           spec_files.count.times do |i|
-            puts "Combining #{failing_spec} with #{i+1} other spec file".blue
+            puts "Combining #{failing_spec} with #{i+1} other spec file(s)".blue
             spec_files.combination(i + 1).each do |files|
               files.push(failing_spec)
               result = "#{command} #{files.join(" ")}"
