@@ -21,11 +21,11 @@ module Flaky
             exit(1)
           end
 
-          parse_params(params, failing_spec)
+          envs, spec_files = parse_params(params, failing_spec)
 
-          command = "#{@envs.join(" ")} rspec --seed #{seed}".strip
+          command = "#{envs.join(" ")} rspec --seed #{seed}".strip
 
-          spec_file_list.each do |files|
+          spec_file_list(spec_files).each do |files|
             files += [failing_spec]
             result = "#{command} #{files.join(" ")}"
             puts "Running command:\n#{result}".yellow
@@ -39,14 +39,15 @@ module Flaky
         private
 
         def parse_params(params, failing_spec)
-          @files, @envs = params.partition {|item| item =~ /_spec.rb$/}
-          @files.reject! {|item| item =~ /#{failing_spec}/}
+          files, envs = params.partition {|item| item =~ /_spec.rb$/}
+          files.reject! {|item| item =~ /#{failing_spec}/}
+          [envs, files]
         end
 
-        def spec_file_list
+        def spec_file_list(spec_files)
           files_list = []
-          @files.count.times do |i|
-            @files.combination(i + 1).each do |files|
+          spec_files.count.times do |i|
+            spec_files.combination(i + 1).each do |files|
               files_list << files
             end
           end
